@@ -2,25 +2,54 @@ require 'rails_helper'
 
 RSpec.describe "Tweets", type: :request do
   
-  before(:each) do
-    @tweet = Tweet.create(body: "This is my first Tweet", user_id: 1 , tweet_id: 1)
+  let(:tweet) do
+    Tweet.create!(
+      body: "This is my first Tweet", 
+      user_id: 1, 
+      tweet_id: 1
+    ) 
+  end
+   
+  describe 'GET /tweets' do
+    it "show list of tweets" do
+      get "/tweets"
+      expect(response).to have_http_status(:success)
+    end
+
+    it "should user_id.present" do
+      get "/tweets"
+      expect(response).to have_http_status(200)
+    end
   end
 
-  it 'checks that a tweet can be created' do
-      expect(@tweet).to be_valid
+  describe "POST /tweets" do
+    it "creates a tweet" do
+      post "/tweets", :params => '{ "tweet": { "body":"This is my first Tweet", "user_id":1, "tweet.id":1 } }'
+      expect(tweet).to be_valid
+    end
   end
 
-  it 'checks that a tweet can be updated' do
-    @tweet.update(:body => "My sweet tweet")
-    expect(Tweet.find_by_body("My sweet tweet")).to eq(@tweet)
+  describe 'PATCH /tweets/:id' do
+    context 'check tweet update' do
+      before do
+        patch "/tweets/#{tweet.id}", params: { "tweet": { "body":"Testing Tweet" } }
+      end
+
+      it 'returns status code' do
+       expect(response).to have_http_status(302)
+      end
+    end
   end
 
-  it 'checks that a retweet the tweet' do
-    expect(Tweet.find_by_id(1)) == (@tweet)
-  end
+  describe 'DELETE /tweets/:id' do
+    before(:each) do
+      tweet_id = tweet.id
+    end
 
-  it 'checks that a tweet can be destroyed' do
-    @tweet.destroy
-    expect(Tweet.find_by(body: "My sweet tweet")).to be_nil
+    it 'should delete tweet & return status 204' do
+      delete "/tweets/#{tweet.id}"
+      expect(Tweet.where(id: tweet.id)).to eq []
+      expect(response.status).to eq 302
+    end
   end
 end
